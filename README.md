@@ -42,7 +42,7 @@ Seq for logging:
 docker run -p:5342:80 -p 5341:5341 -e "ACCEPT_EULA=Y" --name seq -d datalust/seq:latest
 ```
 
-## Create DB and Run Migrations within SQL Server
+### Create DB and Run Migrations within SQL Server
 
 By default, the SQL Server container creates a `master` database. Probably best we don't operate in there though. We'll run the ef core migrations and set up our table structure in a `portfolioss` database.
 
