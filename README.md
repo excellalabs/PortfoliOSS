@@ -51,3 +51,12 @@ By default, the SQL Server container creates a `master` database. Probably best 
 * Run the migrations against the SQL server on localhost (your container) by running `dotnet ef database update`.
 
 At this point, you'll have the migrations applied for our table structure, but Akka will still need to create its event sourcing tables (which it will do because it has the SA password to the container at this point.)
+
+## Thank you to the OSS and Tools That Power Us
+
+While this project encourages OSS contributions, it would be nothing itself without the projects it uses.
+
+* [Akka.NET](https://github.com/akkadotnet/akka.net) by [Petabridge](https://petabridge.com/)
+* [Ocokit.NET](https://github.com/octokit/octokit.net) by [the GitHub Octokit Team](https://github.com/octokit)
+* [Serilog](https://serilog.net/) (the OSS Logger) and [Seq](https://datalust.co/seq) (the phenomenal commercial log sink with a free edition)
+* [Microsoft's .NET -- .NET Core (and .NET 5-7) Framework](https://dotnet.microsoft.com), which is a world-class cross-platform framework that also happens to be open source these days.
