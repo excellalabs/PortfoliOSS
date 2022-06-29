@@ -94,6 +94,17 @@ By default, the SQL Server container creates a `master` database. Probably best 
 
 At this point, you'll have the migrations applied for our table structure, but Akka will still need to create its event sourcing tables (which it will do because it has the SA password to the container at this point.)
 
+### Using the included PowerBI Report to View Data
+
+* You can find the PowerBI template in the `reporting` folder off of the root of this repository
+* Opening the template will attempt to load data from the localhost database specified earlier in the README, and with the same credentials.
+* If you have the database elsewhere or with different credentials, you'll want to change the data source. You can do this by:
+  * Opening the PowerBI report
+  * Waiting for data to load (or seeing an error if the existing data source isn't found)
+  * Go to `File -> Options and settings -> Data source settings -> Data sources`
+  * Clicking the data source and selecting `Change Data Source`
+  * Entering the new location of the data source, and any credentials when prompted.
+
 ## Thank you to the OSS and Tools That Power Us
 
 While this project encourages OSS contributions, it would be nothing itself without the projects it uses.
