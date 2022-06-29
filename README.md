@@ -57,6 +57,6 @@ At this point, you'll have the migrations applied for our table structure, but A
 While this project encourages OSS contributions, it would be nothing itself without the projects it uses.
 
 * [Akka.NET](https://github.com/akkadotnet/akka.net) by [Petabridge](https://petabridge.com/)
-* [Ocokit.NET](https://github.com/octokit/octokit.net) by [the GitHub Octokit Team](https://github.com/octokit)
+* [Octokit.NET](https://github.com/octokit/octokit.net) by [the GitHub Octokit Team](https://github.com/octokit)
 * [Serilog](https://serilog.net/) (the OSS Logger) and [Seq](https://datalust.co/seq) (the phenomenal commercial log sink with a free edition)
 * [Microsoft's .NET -- .NET Core (and .NET 5-7) Framework](https://dotnet.microsoft.com), which is a world-class cross-platform framework that also happens to be open source these days.
