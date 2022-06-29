@@ -28,6 +28,46 @@ Some of this is...a little more rough than I'd normally publish. But, with limit
 
 Our aim is to simplify the setup as much as possible.
 
+### Generating GitHub Tokens
+
+In order to use this tool, you'll need to supply it with GitHub tokens for one or more users, which will enable the API requests to GitHub.
+
+So, an important first step is generating (and asking others to) generate those tokens.
+
+You or others can create a token at <https://github.com/settings/tokens>
+
+As of this writing, we recommend providing the following permissions to the token you'll use for PortfoliOSS:
+
+* `public_repo`
+* `read:org`
+* `read:public_key`
+* `read:user`
+* `read:enterprise`
+* `read:gpg_key`
+
+### Setting up the Application Secrets to add GitHub Users
+
+Right now, the app configuration expects a section that looks like the following:
+
+```JSON
+{
+  "PeopleAndTokens": {
+    "Sean Killeen": "SEANS_GITHUB_TOKEN",
+    "Person B": "THEIR_GITHUB_TOKEN",
+  }
+}
+```
+
+To keep tokens private when running locally, it's best to make use of User Secrets.
+
+* Right-click the console project and select `Manage User Secrets`.
+  * Alternately, use the `dotnet user-secrets` syntax from the command line. Let us know if you have trouble with it.
+* Add the people and tokens you'd like the app to use.
+
+Note that we'll also likely be updating this config syntax to be an array of objects with properties in the near future.
+
+### Setting up the Orgs you want to track
+
 ### Containers
 
 SQL DB for persistence:
@@ -35,6 +75,8 @@ SQL DB for persistence:
 ```cmd
 docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=yourStrong(!)Password" -p 1433:1433 --name portfolioss -d mcr.microsoft.com/mssql/server:2019-latest
 ```
+
+:warning: If you change this, you'll need to also update the connection strings throughout the project and the HOCON config. And if you're planning on using anything other than a local SQL DB, we might hold off on this project for a bit, because hard-coded strings like this in an app is definitely bad for public use.
 
 Seq for logging:
 
@@ -57,6 +99,6 @@ At this point, you'll have the migrations applied for our table structure, but A
 While this project encourages OSS contributions, it would be nothing itself without the projects it uses.
 
 * [Akka.NET](https://github.com/akkadotnet/akka.net) by [Petabridge](https://petabridge.com/)
-* [Ocokit.NET](https://github.com/octokit/octokit.net) by [the GitHub Octokit Team](https://github.com/octokit)
+* [Octokit.NET](https://github.com/octokit/octokit.net) by [the GitHub Octokit Team](https://github.com/octokit)
 * [Serilog](https://serilog.net/) (the OSS Logger) and [Seq](https://datalust.co/seq) (the phenomenal commercial log sink with a free edition)
 * [Microsoft's .NET -- .NET Core (and .NET 5-7) Framework](https://dotnet.microsoft.com), which is a world-class cross-platform framework that also happens to be open source these days.
