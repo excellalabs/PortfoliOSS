@@ -64,6 +64,8 @@ To keep tokens private when running locally, it's best to make use of User Secre
   * Alternately, use the `dotnet user-secrets` syntax from the command line. Let us know if you have trouble with it.
 * Add the people and tokens you'd like the app to use.
 
+Note that we'll also likely be updating this config syntax to be an array of objects with properties in the near future.
+
 ### Setting up the Orgs you want to track
 
 ### Containers
