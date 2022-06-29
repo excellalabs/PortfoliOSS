@@ -74,7 +74,7 @@ SQL DB for persistence:
 docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=yourStrong(!)Password" -p 1433:1433 --name portfolioss -d mcr.microsoft.com/mssql/server:2019-latest
 ```
 
-NOTE: If you change this to, you'll need to also update the connection strings throughout the project and the HOCON config. And if you're planning on using anything other than a local SQL DB, we might hold off on this project for a bit, because hard-coded strings like this in an app is definitely bad for public use.
+:warning: If you change this, you'll need to also update the connection strings throughout the project and the HOCON config. And if you're planning on using anything other than a local SQL DB, we might hold off on this project for a bit, because hard-coded strings like this in an app is definitely bad for public use.
 
 Seq for logging:
 
