@@ -24,7 +24,11 @@ A personal note from @SeanKilleen:
 
 Some of this is...a little more rough than I'd normally publish. But, with limited time and resources, it was too easy to let the tool sit in a private repo and allow perfect to be the enemy of the good. This tool is solving a problem and it had been sitting too long in a private repo where only I could run it and improve it. It's time to put it out into the light, which I hope will drive more contributions and improvements.
 
-## Containers
+## Getting Started Running this
+
+Our aim is to simplify the setup as much as possible.
+
+### Containers
 
 SQL DB for persistence:
 
