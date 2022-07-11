@@ -4,6 +4,7 @@ using System.Linq;
 using Akka.Actor;
 using Akka.Event;
 using Akka.IO;
+using Google.Protobuf.WellKnownTypes;
 using Octokit;
 using PortfoliOSS.ModernDomain.Commands;
 
@@ -58,48 +59,97 @@ namespace PortfoliOSS.ModernDomain.Actors
                 try
                 {
                     users = await _apiClient.Organization.Member.GetAll(m.GithubOrgName);
+                    var userNames = users.Select(x => new GitHubUser(x.Login, x.Id)).ToList();
+                    CheckApiLimits(_apiClient.GetLastApiInfo());
+                    _userManager.Tell(new UsersDiscovered(userNames));
+                    Sender.Tell(new UsersDiscovered(userNames));
+                }
+                catch (RateLimitExceededException ex)
+                {
+                    RateLimitExceeded(ex);
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Error during a command");
+                    _logger.Error(ex, "Error occurred");
+                    throw;
                 }
-                var userNames = users.Select(x => new GitHubUser(x.Login, x.Id)).ToList();
-                CheckApiLimits(_apiClient.GetLastApiInfo());
-                _userManager.Tell(new UsersDiscovered(userNames));
-                Sender.Tell(new UsersDiscovered(userNames));
             });
 
 
             ReceiveAsync<GetForksAndSourcesForUser>(async m =>
             {
+                IReadOnlyList<Repository> result;
+                List<Repository> forks;
+                List<Repository> sources;
                 _logger.Info("Getting forks and sources for {UserName}", m.UserName);
-                var result = await _apiClient.Repository.GetAllForUser(m.UserName);
-                var forks = result.Where(x => x.Fork).ToList();
-                var sources = result.Where(x => !x.Fork).ToList();
-                CheckApiLimits(_apiClient.GetLastApiInfo());
-                _logger.Info("Sending {ForkCount} forks and {SourceCount} sources to repoManager for {UserName}", forks.Count, sources.Count, m.UserName);
-                _repoManager.Tell(new ForkListForUser(m.UserName, forks));
-                _repoManager.Tell(new SourceListForUser(m.UserName, sources));
-                _logger.Info("Sending {ForkCount} forks and {SourceCount} sources to Sender for {UserName}", forks.Count, sources.Count, m.UserName);
-                Sender.Tell(new ForkListForUser(m.UserName, forks));
-                Sender.Tell(new SourceListForUser(m.UserName, sources));
+                try
+                {
+                    result = await _apiClient.Repository.GetAllForUser(m.UserName);
+                    forks = result.Where(x => x.Fork).ToList();
+                    sources = result.Where(x => !x.Fork).ToList();
+                    CheckApiLimits(_apiClient.GetLastApiInfo());
+                    _logger.Info("Sending {ForkCount} forks and {SourceCount} sources to repoManager for {UserName}",
+                        forks.Count, sources.Count, m.UserName);
+                    _repoManager.Tell(new ForkListForUser(m.UserName, forks));
+                    _repoManager.Tell(new SourceListForUser(m.UserName, sources));
+                    _logger.Info("Sending {ForkCount} forks and {SourceCount} sources to Sender for {UserName}",
+                        forks.Count, sources.Count, m.UserName);
+                    Sender.Tell(new ForkListForUser(m.UserName, forks));
+                    Sender.Tell(new SourceListForUser(m.UserName, sources));
+                }
+                catch (RateLimitExceededException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error occurred");
+                    throw;
+                }
             });
 
             ReceiveAsync<GetForksAndSourcesForOrg>(async m =>
             {
-                _logger.Info("Getting forks and sources for org {OrgId}", m.OrgId);
-                var result = await _apiClient.Repository.GetAllForOrg(m.OrgName);
-                var forks = result.Where(x => x.Fork).ToList();
-                var sources = result.Where(x => !x.Fork).ToList();
-                CheckApiLimits(_apiClient.GetLastApiInfo());
-                _repoManager.Tell(new ForkListForUser(m.OrgName, forks));
-                _repoManager.Tell(new SourceListForUser(m.OrgName, sources));
-                _logger.Info("Sending {ForkCount} forks and {SourceCount} sources to Sender for {OrgName}",
-                    forks.Count, sources.Count, m.OrgName);
+                try
+                {
+                    _logger.Info("Getting forks and sources for org {OrgId}", m.OrgId);
+                    var result = await _apiClient.Repository.GetAllForOrg(m.OrgName);
+                    var forks = result.Where(x => x.Fork).ToList();
+                    var sources = result.Where(x => !x.Fork).ToList();
+                    CheckApiLimits(_apiClient.GetLastApiInfo());
+                    _repoManager.Tell(new ForkListForUser(m.OrgName, forks));
+                    _repoManager.Tell(new SourceListForUser(m.OrgName, sources));
+                    _logger.Info("Sending {ForkCount} forks and {SourceCount} sources to Sender for {OrgName}",
+                        forks.Count, sources.Count, m.OrgName);
+                }
+                catch (RateLimitExceededException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error occurred");
+                    throw;
+                }
+
             });
 
             ReceiveAsync<GetSourceForFork>(async m =>
             {
+                try
+                {
+
+                }
+                catch (RateLimitExceededException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error occurred");
+                    throw;
+                }
+
                 _logger.Info("Getting Source for Fork: {ForkRepoFullName}", m.Fork.RepoFullName);
                 var fullRepoInfo = await _apiClient.Repository.Get(m.Fork.RepoId);
                 var sourceRepo = fullRepoInfo.Source;
@@ -111,41 +161,66 @@ namespace PortfoliOSS.ModernDomain.Actors
 
             ReceiveAsync<GetPagedRepoPullRequests>(async m =>
             {
-                _logger.Info("Getting page {PageNumber} of PRs from repo {RepoFullName}", m.StartingPageNumber, m.RepoFullName);
-
-                var apiOptions = new ApiOptions
+                try
                 {
-                    PageSize = Constants.PR_PAGE_SIZE,
-                    StartPage = m.StartingPageNumber,
-                    PageCount = 1
-                };
+                    _logger.Info("Getting page {PageNumber} of PRs from repo {RepoFullName}", m.StartingPageNumber, m.RepoFullName);
 
-                var pullRequests = await _apiClient.PullRequest.GetAllForRepository(m.RepositoryId, _defaultPrRequest, apiOptions);
+                    var apiOptions = new ApiOptions
+                    {
+                        PageSize = Constants.PR_PAGE_SIZE,
+                        StartPage = m.StartingPageNumber,
+                        PageCount = 1
+                    };
 
-                CheckApiLimits(_apiClient.GetLastApiInfo());
+                    var pullRequests = await _apiClient.PullRequest.GetAllForRepository(m.RepositoryId, _defaultPrRequest, apiOptions);
+                    CheckApiLimits(_apiClient.GetLastApiInfo());
 
-                if (pullRequests.Any())
-                {
-                    _logger.Info("PRs found, which means we'll try the next page too");
-                    Context.Parent.Tell(new GetPagedRepoPullRequests(m.RepoFullName, m.RepositoryId, m.StartingPageNumber + 1, m.LatestPRNumber), Sender);
+                    if (pullRequests.Any())
+                    {
+                        _logger.Info("PRs found, which means we'll try the next page too");
+                        Context.Parent.Tell(new GetPagedRepoPullRequests(m.RepoFullName, m.RepositoryId, m.StartingPageNumber + 1, m.LatestPRNumber), Sender);
 
-                    var formattedInfo = pullRequests.Where(x => x.Number > m.LatestPRNumber).Select(x => new PRInfo(m.RepoFullName, m.RepositoryId, x.Number, x.User.Login, x.Merged, x.MergedAt, x.CreatedAt, x.User.Id)).ToList();
-                    _logger.Debug("{FormattedItemCount} formatted items for Page {PageNumber} of repo {RepoName}", formattedInfo.Count, m.StartingPageNumber, m.RepoFullName);
+                        var formattedInfo = pullRequests.Where(x => x.Number > m.LatestPRNumber).Select(x => new PRInfo(m.RepoFullName, m.RepositoryId, x.Number, x.User.Login, x.Merged, x.MergedAt, x.CreatedAt, x.User.Id)).ToList();
+                        _logger.Debug("{FormattedItemCount} formatted items for Page {PageNumber} of repo {RepoName}", formattedInfo.Count, m.StartingPageNumber, m.RepoFullName);
 
-                    _repoManager.Tell(new PRInfoList(formattedInfo, m.RepoFullName));
-                    _userManager.Tell(new PRInfoList(formattedInfo, m.RepoFullName));
+                        _repoManager.Tell(new PRInfoList(formattedInfo, m.RepoFullName));
+                        _userManager.Tell(new PRInfoList(formattedInfo, m.RepoFullName));
+                    }
+                    else
+                    {
+                        _logger.Info("No PRs found for page {PageNumber} of repo ID {RepoFullName} -- not taking further action", m.StartingPageNumber, m.RepoFullName);
+                    }
                 }
-                else
+                catch (RateLimitExceededException ex)
                 {
-                    _logger.Info("No PRs found for page {PageNumber} of repo ID {RepoFullName} -- not taking further action", m.StartingPageNumber, m.RepoFullName);
+                    RateLimitExceeded(ex);
                 }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error occurred");
+                    throw;
+                }
+
+
             });
 
             ReceiveAsync<AddOrgRequest>(async msg =>
             {
-                var result = await _apiClient.Organization.Get(msg.OrgName);
+                try
+                {
+                    var result = await _apiClient.Organization.Get(msg.OrgName);
 
-                _orgManager.Tell(new AddOrgCommand(result.Login, result.Id));
+                    _orgManager.Tell(new AddOrgCommand(result.Login, result.Id));
+                }
+                catch (RateLimitExceededException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "Error occurred");
+                    throw;
+                }
             });
         }
 
@@ -164,6 +239,13 @@ namespace PortfoliOSS.ModernDomain.Actors
             });
         }
 
+        private void RateLimitExceeded(RateLimitExceededException ex)
+        {
+            var timeToPause = ex.GetRetryAfterTimeSpan().Add(TimeSpan.FromMinutes(1));
+            _logger.Error(ex, "Received an error -- pausing for {MinutesToPause} minutes", timeToPause.TotalMinutes);
+            Context.System.Scheduler.ScheduleTellOnce(timeToPause, Self, new Resume(), Self);
+            Become(Paused);
+        }
         private void CheckApiLimits(ApiInfo apiInfo)
         {
             if (apiInfo == null)
@@ -179,7 +261,7 @@ namespace PortfoliOSS.ModernDomain.Actors
                 _logger.Warning("Only {RemainingRequests} requests remaining; pausing until {ResetTime}.", apiInfo.RateLimit.Remaining, apiInfo.RateLimit.Reset);
 
                 var timeSpanDifference = apiInfo.RateLimit.Reset - DateTimeOffset.Now;
-                timeSpanDifference = timeSpanDifference + TimeSpan.FromSeconds(5); // add an additional 5 seconds just to be safe.
+                timeSpanDifference = timeSpanDifference + TimeSpan.FromMinutes(1); // add an additional minute just to be safe.
 
                 _logger.Info("Looks like we'll have to wait for {SecondsToWait} seconds. Scheduling resume message now.", timeSpanDifference.TotalSeconds);
                 Context.System.Scheduler.ScheduleTellOnce(timeSpanDifference, Self, new Resume(), Self);
