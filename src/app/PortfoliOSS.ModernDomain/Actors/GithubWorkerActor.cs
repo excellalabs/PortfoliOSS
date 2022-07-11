@@ -19,6 +19,18 @@ namespace PortfoliOSS.ModernDomain.Actors
         private readonly ActorSelection _orgManager;
         public IStash Stash { get; set; }
 
+        protected override void PreRestart(Exception reason, object message)
+        {
+            _logger.Error(reason, "Stashing all messages and preparing to restart");
+            Stash.Stash();
+        }
+
+        protected override void PostRestart(Exception reason)
+        {
+            _logger.Error(reason, "Recovering after restart and unstashing all messages");
+            Stash.UnstashAll();
+        }
+
         public GithubWorkerActor(string appName, string apiKey)
         {
             _userManager = Context.ActorSelection(Constants.ActorPaths.USER_MANAGER);
