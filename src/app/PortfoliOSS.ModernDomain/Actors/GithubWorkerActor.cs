@@ -68,6 +68,10 @@ namespace PortfoliOSS.ModernDomain.Actors
                 {
                     RateLimitExceeded(ex);
                 }
+                catch (ForbiddenException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Error occurred");
@@ -101,6 +105,10 @@ namespace PortfoliOSS.ModernDomain.Actors
                 {
                     RateLimitExceeded(ex);
                 }
+                catch (ForbiddenException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Error occurred");
@@ -126,6 +134,10 @@ namespace PortfoliOSS.ModernDomain.Actors
                 {
                     RateLimitExceeded(ex);
                 }
+                catch (ForbiddenException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Error occurred");
@@ -141,6 +153,10 @@ namespace PortfoliOSS.ModernDomain.Actors
 
                 }
                 catch (RateLimitExceededException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
+                catch (ForbiddenException ex)
                 {
                     RateLimitExceeded(ex);
                 }
@@ -195,6 +211,10 @@ namespace PortfoliOSS.ModernDomain.Actors
                 {
                     RateLimitExceeded(ex);
                 }
+                catch (ForbiddenException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
                 catch (Exception ex)
                 {
                     _logger.Error(ex, "Error occurred");
@@ -213,6 +233,10 @@ namespace PortfoliOSS.ModernDomain.Actors
                     _orgManager.Tell(new AddOrgCommand(result.Login, result.Id));
                 }
                 catch (RateLimitExceededException ex)
+                {
+                    RateLimitExceeded(ex);
+                }
+                catch (ForbiddenException ex)
                 {
                     RateLimitExceeded(ex);
                 }
@@ -239,9 +263,20 @@ namespace PortfoliOSS.ModernDomain.Actors
             });
         }
 
+        private void RateLimitExceeded(ForbiddenException ex)
+        {
+            var timeToPause = TimeSpan.FromMinutes(15);
+            ErrorAndPaused(ex, timeToPause);
+        }
+
         private void RateLimitExceeded(RateLimitExceededException ex)
         {
             var timeToPause = ex.GetRetryAfterTimeSpan().Add(TimeSpan.FromMinutes(1));
+            ErrorAndPaused(ex, timeToPause);
+        }
+
+        private void ErrorAndPaused(Exception ex, TimeSpan timeToPause)
+        {
             _logger.Error(ex, "Received an error -- pausing for {MinutesToPause} minutes", timeToPause.TotalMinutes);
             Context.System.Scheduler.ScheduleTellOnce(timeToPause, Self, new Resume(), Self);
             Become(Paused);
