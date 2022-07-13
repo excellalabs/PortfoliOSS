@@ -27,6 +27,14 @@ namespace PortfoliOSS.ModernDomain.Actors
         private List<string> _usersCheckedForForksAndSources = new List<string>();
         private List<DonatedGitHubToken> _tokens;
 
+        protected override SupervisorStrategy SupervisorStrategy()
+        {
+            return new OneForOneStrategy(
+                maxNrOfRetries: 10,
+                withinTimeRange: TimeSpan.FromMinutes(1),
+                localOnlyDecider: ex => Directive.Restart);
+        }
+
         public GithubClientActor(List<DonatedGitHubToken> tokens)
         {
             _tokens = tokens;
