@@ -67,8 +67,8 @@ namespace PortfoliOSS.ModernDomain.Actors
 
             Recover<RecoveryCompleted>(msg =>
             {
-                _logger.Info("RECOVERY COMPLETED: CreateViewsActor with latest Offset of {LatestOffsetCount}");
-                _readJournal.AllEvents(Offset.Sequence(_state.LatestOffsetCount)).RunForeach(env => Self.Tell(env), _materializer);
+                _logger.Info("RECOVERY COMPLETED: CreateViewsActor with latest Offset of {LatestOffsetCount}", _state.LatestOffsetCount);
+                _readJournal.AllEvents(Offset.Sequence(_state.LatestOffsetCount)).RunForeach(env => Self.Tell(env), _materializer).ConfigureAwait(false);
             });
 
             Command<EventEnvelope>(async message =>
