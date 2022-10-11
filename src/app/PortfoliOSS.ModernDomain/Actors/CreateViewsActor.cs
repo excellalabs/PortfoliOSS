@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence.Query;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
-using Octokit;
 using PortfoliOSS.ModernData;
-using PortfoliOSS.ModernDomain.Actors.Persistent;
 using PortfoliOSS.ModernDomain.Events;
 using Organization = PortfoliOSS.ModernData.Organization;
 using PullRequest = PortfoliOSS.ModernData.PullRequest;
