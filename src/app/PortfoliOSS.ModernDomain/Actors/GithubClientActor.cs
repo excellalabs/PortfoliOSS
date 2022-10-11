@@ -31,15 +31,19 @@ namespace PortfoliOSS.ModernDomain.Actors
         protected override SupervisorStrategy SupervisorStrategy()
         {
             return new OneForOneStrategy(
-                maxNrOfRetries: 5,
+                maxNrOfRetries: 15,
                 withinTimeRange: TimeSpan.FromMinutes(1),
                 localOnlyDecider: ex =>
                 {
-                    if (ex is Octokit.NotFoundException)
+                    switch (ex)
                     {
-                        return Directive.Resume;
+                        case Octokit.NotFoundException:
+                            return Directive.Resume;
+                        case ApiException when ex.Message == "Server Error":
+                            return Directive.Resume;
+                        default:
+                            return Directive.Restart;
                     }
-                    return Directive.Restart;
                 });
         }
 
