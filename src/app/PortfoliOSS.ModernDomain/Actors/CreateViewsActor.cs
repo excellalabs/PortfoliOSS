@@ -1,11 +1,14 @@
 ﻿using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Akka;
 using Akka.Actor;
 using Akka.Event;
 using Akka.Persistence;
 using Akka.Persistence.Query;
 using Akka.Persistence.Query.Sql;
 using Akka.Streams;
+using Akka.Streams.Dsl;
 using Microsoft.EntityFrameworkCore;
 using PortfoliOSS.ModernData;
 using PortfoliOSS.ModernDomain.Events;
@@ -38,12 +41,11 @@ namespace PortfoliOSS.ModernDomain.Actors
         private readonly IDbContextFactory<PortfoliOSSDBContext> _contextFactory;
         private const int SnapShotInterval = 1000;
         private SqlReadJournal _readJournal;
-        private ActorMaterializer _materializer;
+        private Source<EventEnvelope, NotUsed> _query;
         public CreateViewsActor(IDbContextFactory<PortfoliOSSDBContext> contextFactory)
         {
             _readJournal = PersistenceQuery.Get(Context.System)
                 .ReadJournalFor<SqlReadJournal>("akka.persistence.query.my-read-journal");
-            _materializer = Context.System.Materializer();
 
             _state = new CreateViewsActorState();
             _contextFactory = contextFactory;
@@ -68,7 +70,9 @@ namespace PortfoliOSS.ModernDomain.Actors
             Recover<RecoveryCompleted>(msg =>
             {
                 _logger.Info("RECOVERY COMPLETED: CreateViewsActor with latest Offset of {LatestOffsetCount}", _state.LatestOffsetCount);
-                _readJournal.AllEvents(Offset.Sequence(_state.LatestOffsetCount)).RunForeach(env => Self.Tell(env), _materializer).ConfigureAwait(false);
+                _query = _readJournal.AllEvents(Offset.Sequence(_state.LatestOffsetCount));
+                var materializer = ActorMaterializer.Create(Context.System);
+                _query.RunForeach(env => Self.Tell(env), materializer);
             });
 
             Command<EventEnvelope>(async message =>
@@ -101,6 +105,7 @@ namespace PortfoliOSS.ModernDomain.Actors
                 Persist(new EnvelopeProcessedEvent(_state.LatestOffsetCount++), Apply);
                 if (_state.LatestOffsetCount % SnapShotInterval == 0 && _state.LatestOffsetCount != 0)
                 {
+                    _logger.Info("Saving snapshot at # {LatestOffsetCount}", _state.LatestOffsetCount);
                     SaveSnapshot(_state);
                 }
 
