@@ -60,16 +60,15 @@ namespace PortfoliOSS.ModernConsole
             Log.Logger = logger;
             var configText = await File.ReadAllTextAsync("Config.Hocon"); // TODO: Extract DB connection string into config/secret
             var actorSystem = ActorSystem.Create(Constants.APP_NAME, configText);
+            // ReSharper disable once UnusedVariable
             var writer = actorSystem.ActorOf(Props.Create<CreateViewsActor>(host.Services.GetRequiredService<IDbContextFactory<PortfoliOSSDBContext>>()), "writer");
 
-            var readJournal = PersistenceQuery.Get(actorSystem)
-                .ReadJournalFor<SqlReadJournal>("akka.persistence.query.my-read-journal");
-            var materializer = actorSystem.Materializer();
-            Log.Logger.Information("Trying to stream the events");
-
+            // ReSharper disable once UnusedVariable
             var githubClientActor = actorSystem.ActorOf(Props.Create<GithubClientActor>(tokens), Constants.ActorNames.GITHUB_CLIENT_ACTOR_NAME);
             var orgManager = actorSystem.ActorOf(Props.Create<PersistentOrgManager>(), "OrgManager");
+            // ReSharper disable once UnusedVariable
             var userManager = actorSystem.ActorOf(Props.Create<PersistentUserManager>(), "UserManager");
+            // ReSharper disable once UnusedVariable
             var RepoManager = actorSystem.ActorOf(Props.Create<PersistentRepoManager>(), "RepoManager");
 
             // TODO: This is hard-coded right now. Will need to fix in the future.
@@ -77,8 +76,6 @@ namespace PortfoliOSS.ModernConsole
             orgManager.Tell(new AddOrgRequest("excellalabs")); // TODO: Extract to config and loop
 
             await actorSystem.WhenTerminated;
-
-            await host.RunAsync();
         }
     }
 }
