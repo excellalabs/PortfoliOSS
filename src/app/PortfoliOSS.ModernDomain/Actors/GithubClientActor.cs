@@ -5,6 +5,7 @@ using Akka.Actor;
 using Akka.Event;
 using Akka.Routing;
 using Microsoft.Extensions.Configuration;
+using Octokit;
 
 namespace PortfoliOSS.ModernDomain.Actors
 {
@@ -30,9 +31,16 @@ namespace PortfoliOSS.ModernDomain.Actors
         protected override SupervisorStrategy SupervisorStrategy()
         {
             return new OneForOneStrategy(
-                maxNrOfRetries: 10,
+                maxNrOfRetries: 5,
                 withinTimeRange: TimeSpan.FromMinutes(1),
-                localOnlyDecider: ex => Directive.Restart);
+                localOnlyDecider: ex =>
+                {
+                    if (ex is Octokit.NotFoundException)
+                    {
+                        return Directive.Resume;
+                    }
+                    return Directive.Restart;
+                });
         }
 
         public GithubClientActor(List<DonatedGitHubToken> tokens)
