@@ -2,10 +2,15 @@
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Event;
+using Akka.Persistence;
 using Akka.Persistence.Query;
+using Akka.Persistence.Query.Sql;
+using Akka.Streams;
 using Microsoft.EntityFrameworkCore;
 using PortfoliOSS.ModernData;
 using PortfoliOSS.ModernDomain.Events;
+using PortfoliOSS.ModernDomain.State;
+using static Akka.IO.Tcp;
 using Organization = PortfoliOSS.ModernData.Organization;
 using PullRequest = PortfoliOSS.ModernData.PullRequest;
 using Repository = PortfoliOSS.ModernData.Repository;
@@ -13,20 +18,63 @@ using User = PortfoliOSS.ModernData.User;
 
 namespace PortfoliOSS.ModernDomain.Actors
 {
-    public class CreateViewsActor : ReceiveActor
+    public class CreateViewsActorState
     {
+        public long LatestOffsetCount { get; set; }
+    }
+
+    public class EnvelopeProcessedEvent
+    {
+        public long OffsetNumber { get; }
+        public EnvelopeProcessedEvent(long offsetNumber)
+        {
+            OffsetNumber = offsetNumber;
+        }
+    }
+    public class CreateViewsActor : ReceivePersistentActor
+    {
+        private CreateViewsActorState _state;
         private ILoggingAdapter _logger;
         private readonly IDbContextFactory<PortfoliOSSDBContext> _contextFactory;
+        private const int SnapShotInterval = 1000;
+        private SqlReadJournal _readJournal;
+        private ActorMaterializer _materializer;
         public CreateViewsActor(IDbContextFactory<PortfoliOSSDBContext> contextFactory)
         {
+            _readJournal = PersistenceQuery.Get(Context.System)
+                .ReadJournalFor<SqlReadJournal>("akka.persistence.query.my-read-journal");
+            _materializer = Context.System.Materializer();
+
+            _state = new CreateViewsActorState();
             _contextFactory = contextFactory;
             _logger = Context.GetLogger();
             var capturedEvents = 0;
 
-            ReceiveAsync<EventEnvelope>(async message =>
+            Recover<SnapshotOffer>(offer =>
+            {
+                if (offer.Snapshot is CreateViewsActorState state)
+                {
+                    _logger.Info("Received snapshot with latest of {LatestOffsetCount}", state.LatestOffsetCount);
+                    _state = state;
+                }
+            });
+
+            Recover<EnvelopeProcessedEvent>(msg =>
+            {
+                _logger.Info("Recovering EnvelopeProcessedEvent with offset of {OffsetNumber}", msg.OffsetNumber);
+                _state.LatestOffsetCount = msg.OffsetNumber;
+            });
+
+            Recover<RecoveryCompleted>(msg =>
+            {
+                _logger.Info("RECOVERY COMPLETED: CreateViewsActor with latest Offset of {LatestOffsetCount}");
+                _readJournal.AllEvents(Offset.Sequence(_state.LatestOffsetCount)).RunForeach(env => Self.Tell(env), _materializer);
+            });
+
+            Command<EventEnvelope>(async message =>
             {
                 var ctx = await _contextFactory.CreateDbContextAsync();
-                capturedEvents++;
+
                 _logger.Warning("RECEIVED EVENT # {EventNumber} in my processing. PersistenceId {PersistenceId} Sequence number {SequenceNumber}", capturedEvents, message.PersistenceId, message.SequenceNr);
                 switch (message.Event)
                 {
@@ -49,11 +97,22 @@ namespace PortfoliOSS.ModernDomain.Actors
                         await Apply(evt, ctx);
                         break;
                 }
+
+                Persist(new EnvelopeProcessedEvent(_state.LatestOffsetCount++), Apply);
+                if (_state.LatestOffsetCount % SnapShotInterval == 0 && _state.LatestOffsetCount != 0)
+                {
+                    SaveSnapshot(_state);
+                }
+
             });
 
             _logger.Info("View writer created");
         }
 
+        private void Apply(EnvelopeProcessedEvent evt)
+        {
+            _state.LatestOffsetCount = evt.OffsetNumber;
+        }
         private async Task Apply(ForkRepoAddedEvent evt, PortfoliOSSDBContext ctx)
         {
             if (ctx.Repositories.Any(x => x.RepoId == evt.RepoId))
@@ -187,5 +246,7 @@ namespace PortfoliOSS.ModernDomain.Actors
             orgToAssociateWith.Repositories.Add(addedSourceRepo);
             await ctx.SaveChangesAsync();
         }
+
+        public override string PersistenceId => "create-views-actor";
     }
 }

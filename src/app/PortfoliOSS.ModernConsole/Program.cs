@@ -67,11 +67,6 @@ namespace PortfoliOSS.ModernConsole
             var materializer = actorSystem.Materializer();
             Log.Logger.Information("Trying to stream the events");
 
-            // TODO: This is an issue currently. If you have 8 million events, it will replay them all. 
-            // The operations shouldn't be a problem, but it will certainly take time. If you need to offset, you'll have to 
-            // Change the offset manually for a given run. We have an item in the backlog to tackle this.
-            readJournal.AllEvents(Offset.NoOffset()).RunForeach(env => writer.Tell(env), materializer);
-
             var githubClientActor = actorSystem.ActorOf(Props.Create<GithubClientActor>(tokens), Constants.ActorNames.GITHUB_CLIENT_ACTOR_NAME);
             var orgManager = actorSystem.ActorOf(Props.Create<PersistentOrgManager>(), "OrgManager");
             var userManager = actorSystem.ActorOf(Props.Create<PersistentUserManager>(), "UserManager");
