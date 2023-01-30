@@ -14,7 +14,7 @@ public class PortfoliOSSDBContext : DbContext
 
     // TODO: Extract connection string into configuration
     protected override void OnConfiguring(DbContextOptionsBuilder options) =>
-        options.UseSqlServer("Server=localhost;Database=portfolioss;User Id=sa;Password=yourStrong(!)Password;");
+        options.UseSqlServer("Server=localhost;Database=portfolioss;User Id=sa;Password=yourStrong(!)Password;Trust Server Certificate=true;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
