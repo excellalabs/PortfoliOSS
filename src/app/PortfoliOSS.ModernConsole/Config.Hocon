@@ -14,7 +14,7 @@ akka.persistence{
 
 			# connection string used for database access
 			# TODO: These are hard-coded creds but they're meant for a local DB run. Don't hard-code the creds!
-			connection-string = "Server=localhost;Database=portfolioss;User Id=sa;Password=yourStrong(!)Password;"
+			connection-string = "Server=localhost;Database=portfolioss;User Id=sa;Password=yourStrong(!)Password;Trust Server Certificate=true;"
 
 			# default SQL commands timeout
 			connection-timeout = 30s
@@ -52,7 +52,7 @@ akka.persistence{
 
 			# connection string used for database access
 			# TODO: Don't hard-code these creds! These are fine for initial first publish as they're dummy creds, but we should fix that ASAP.
-			connection-string = "Server=localhost;Database=portfolioss;User Id=sa;Password=yourStrong(!)Password;"
+			connection-string = "Server=localhost;Database=portfolioss;User Id=sa;Password=yourStrong(!)Password;Trust Server Certificate=true;"
 
 			# default SQL commands timeout
 			connection-timeout = 30s
