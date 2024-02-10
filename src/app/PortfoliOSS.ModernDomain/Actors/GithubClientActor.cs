@@ -52,7 +52,7 @@ namespace PortfoliOSS.ModernDomain.Actors
             _tokens = tokens;
             _logger = Context.GetLogger();
 
-            var actorsList = tokens.Select(pt => Context.ActorOf(Propmaster.GithubWorkerActor(pt.Token), pt.Person)).ToList();
+            var actorsList = tokens.Select(pt => Context.ActorOf(Propmaster.GithubWorkerActor(pt.Token), pt.Person)).Select(x=>x.Path.ToString()).ToList();
             _githubWorkerActor = Context.ActorOf(Props.Empty.WithRouter(new RoundRobinGroup(actorsList)), "githubWorker");
             
             Receive<LogRequestsMadeSoFar>(m =>
