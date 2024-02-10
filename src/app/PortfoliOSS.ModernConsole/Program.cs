@@ -78,8 +78,7 @@ namespace PortfoliOSS.ModernConsole
             var RepoManager = actorSystem.ActorOf(Props.Create<PersistentRepoManager>(), "RepoManager");
 
             // TODO: This is hard-coded right now. Will need to fix in the future.
-            orgManager.Tell(new AddOrgRequest("excellaco"));
-            orgManager.Tell(new AddOrgRequest("excellalabs")); // TODO: Extract to config and loop
+            orgManager.Tell(new AddOrgRequest("killeencode"));
 
             await actorSystem.WhenTerminated;
 
